@@ -1,10 +1,10 @@
 assert(args[1], "Please specify plugins dir")
-
 load_plugin(args[1].."/radapter_xorg_plugin")
 
-
+local ws = WebsocketServer{
+    port = 11337
+}
 local xorg = XorgPlugin{}
-
 
 local function press(key)
     xorg {
@@ -21,13 +21,13 @@ local function press(key)
     }
 end
 
-each(1000, function()
---    xorg {
---        mouse = {
---            x = 100,
---            y = 100,
---            scroll = 0
---        }
---    }
-    press('lmb')
+on(ws, "keyboard:key", press)
+on(ws, "mouse", function (msg)
+    xorg {
+        mouse = {
+           x = msg.x,
+           y = msg.y,
+           scroll = msg.scroll,
+       }
+    }
 end)
