@@ -37,7 +37,7 @@ static KeySym CodeToXSym(QStringView code, bool shift)
     else if (code == u"CAPS_LOCK") return XK_Caps_Lock;
     else if (code == u"ESCAPE") return XK_Escape;
     else if (code == u"COMMA") return XK_comma;
-    else if (code == u"SPACE") return XK_space;
+    else if (code == u"SPACE" || code == u" ") return XK_space;
     else if (code == u"FN") return 0;
 
     else if (code == u"A") return shift ? XK_A : XK_a;
@@ -163,13 +163,13 @@ RAD_DESCRIBE(XorgKBMessage) {
 }
 
 struct XorgMouseMessage {
-    float x;
-    float y;
-    float scroll;
+    int dx;
+    int dy;
+    int scroll;
 };
 RAD_DESCRIBE(XorgMouseMessage) {
-    RAD_MEMBER(x);
-    RAD_MEMBER(y);
+    RAD_MEMBER(dx);
+    RAD_MEMBER(dy);
     RAD_MEMBER(scroll);
 }
 
@@ -186,11 +186,6 @@ class XorgPlugin final : public radapter::Worker
 {
     Q_OBJECT
 public:
-    struct {
-        uint16_t x = 0;
-        uint16_t y = 0;
-        unsigned modifs = 0;
-    } input;
     Display* disp = {};
     Window root = {};
 
@@ -208,7 +203,7 @@ public:
         XorgMessage parsed;
         Parse(parsed, msg);
         if (auto& mouse = parsed.mouse) {
-            MapMouse(mouse->x, mouse->y, mouse->scroll);
+            MapMouse(mouse->dx, mouse->dy, mouse->scroll);
         }
         if (auto& kb = parsed.kb) {
             MapPress(kb->key, kb->press);
@@ -219,11 +214,13 @@ public:
             Warn("Could not send: {}", ev);
         }
     }
-    void MapMouse(uint16_t x, uint16_t y, float scroll) {
-        auto ok = XTestFakeMotionEvent(disp, -1, x, y, CurrentTime);
+    void MapMouse(int dx, int dy, int scroll) {
+        auto ok = XTestFakeRelativeMotionEvent(disp, dx, dy, CurrentTime);
         check(ok, "Mouse pos");
         if (std::abs(scroll) > std::numeric_limits<float>::epsilon()) {
             ok = XTestFakeButtonEvent(disp, scroll < 0 ? Button4 : Button5, True, CurrentTime);
+            XFlush(disp);
+            ok &= XTestFakeButtonEvent(disp, scroll < 0 ? Button4 : Button5, False, CurrentTime);
             check(ok, "Mouse scroll");
         }
         XFlush(disp);
@@ -246,7 +243,12 @@ public:
                 Warn("Invalid symbol: {}", code);
                 return;
             }
-            auto ok = XTestFakeKeyEvent(disp, XKeysymToKeycode(disp, sym), xpress, CurrentTime);
+            auto kc = XKeysymToKeycode(disp, sym);
+            if (!kc) {
+                Warn("Colud not fetch keycode for: {}", code);
+                return;
+            }
+            auto ok = XTestFakeKeyEvent(disp, kc, xpress, CurrentTime);
             check(ok, "Key click");
         }
         XFlush(disp);

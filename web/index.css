@@ -13,31 +13,36 @@
     height: 100%;
 }
 
-#inputActivator {
+.button-container {
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 80px;
-    height: 80px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.tool-button {
+    width: 60px;
+    height: 60px;
     background-color: #ccc;
-    border-radius: 16px;
+    border: none;
+    border-radius: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 28px;
     cursor: pointer;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    transition: transform 0.2s, background-color 0.2s;
-}
-
-#inputActivator:hover {
-    transform: translateX(-50%) scale(1.1);
-    background-color: #bbb;
-}
-
-#keyboardIcon {
-    font-size: 40px;
+    transition: all 0.2s;
     user-select: none;
+}
+
+.tool-button:hover {
+    transform: scale(1.1);
+    background-color: #bbb;
 }
 
 #hiddenInput {
@@ -51,4 +56,17 @@
     outline: none;
     background: transparent;
     pointer-events: none;
+}
+
+/* Mobile-specific adjustments */
+@media (pointer: coarse) {
+    .button-container {
+        bottom: 30px;
+    }
+    
+    .tool-button {
+        width: 70px;
+        height: 70px;
+        font-size: 32px;
+    }
 }

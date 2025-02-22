@@ -21,13 +21,17 @@ local function press(key)
     }
 end
 
+pipe(ws, function (msg)
+    log("From ws: {}", msg)
+end)
+
 on(ws, "keyboard:key", press)
 on(ws, "mouse", function (msg)
     xorg {
         mouse = {
-           x = msg.x,
-           y = msg.y,
-           scroll = msg.scroll,
+           dx = math.floor(msg.dx * 2.3),
+           dy = math.floor(msg.dy * 2.3),
+           scroll = math.floor(msg.scroll),
        }
     }
 end)
